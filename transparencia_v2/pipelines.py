@@ -30,8 +30,6 @@ class csvWriterPipeline(object):
             self.data_encontrada_infogeneral['entidad_id'] = item['entidad_id']
             self.data_encontrada_infogeneral['entidad_nombre'] = item['entidad_nombre']
 
-            print(self.data_encontrada_infogeneral)
-            
             self.items_written_infogeneral += 1
             if self.items_written_infogeneral % self.ctd_save_infogeneral == 0 :
                 self.data_encontrada_infogeneral = self.guarda_data(self.data_encontrada_infogeneral, self.items_written_infogeneral, self.prename_infogeneral)
