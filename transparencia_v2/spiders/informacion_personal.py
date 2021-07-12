@@ -80,6 +80,6 @@ class InformacionPersonalSpider(scrapy.Spider):
             entidad['personas'] = personas
             yield(entidad)
         else:
-            entidades_filtrar_filepath = self.out_path + f'{self.anho}{self.mes}_informacion_personal_error_{YYYYMMDD_HHMMSS}.txt'
+            entidades_filtrar_filepath = self.out_path + f'{self.anho}{self.mes}_informacion_personal_error_{self.YYYYMMDD_HHMMSS}.txt'
             with open(entidades_filtrar_filepath, 'a') as file:
                 file.write(f"{response.meta.get('entidad_id')}\n")
