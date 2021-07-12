@@ -1,8 +1,5 @@
 import pandas as pd
 from transparencia_v2.items import EntidadItem, InformacionEntidadItem
-from datetime import datetime
-
-YYYYMMDD_HHMMSS = datetime.now().strftime("%Y%m%d_%H%M%S")
 
 class TransparenciaV2Pipeline:
     def process_item(self, item, spider):
@@ -17,11 +14,10 @@ class csvWriterPipeline(object):
         self.data_encontrada_infogeneral = pd.DataFrame(columns = self.columnsPrincipal)
         self.ctd_save_infogeneral = 2
         self.prename_infogeneral = ''
-        pass
 
     def process_item(self, item, spider):
         if isinstance(item, InformacionEntidadItem):
-            self.prename_infogeneral = f'{self.out_path}{YYYYMMDD_HHMMSS}_informacion_personal.txt'
+            self.prename_infogeneral = f"{self.out_path}{getattr(spider, 'codmes')}_informacion_personal_{getattr(spider, 'YYYYMMDD_HHMMSS')}.txt"
             
             self.data_encontrada_infogeneral = pd.json_normalize(item['personas'])
             self.data_encontrada_infogeneral['tipo_poder_id'] = item['tipo_poder_id']
@@ -37,7 +33,7 @@ class csvWriterPipeline(object):
 
     def guarda_data(self, df_gral, ctd_items=0, prename=''):
         df_gral.to_csv(self.prename_infogeneral, sep='\t', header=ctd_items<=self.ctd_save_infogeneral, index=False, encoding="utf-8", columns=self.columnsPrincipal, mode='a')
-        return None
+        return pd.DataFrame(columns = self.columnsPrincipal)
 
     def __del__(self):
         self.guarda_data(self.data_encontrada_infogeneral, self.items_written_infogeneral, self.prename_infogeneral)

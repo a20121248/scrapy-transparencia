@@ -2,13 +2,14 @@ import scrapy
 import pandas as pd
 from transparencia_v2.items import InformacionEntidadItem, PersonaItem
 from datetime import datetime
-
-YYYYMMDD_HHMMSS = datetime.now().strftime("%Y%m%d_%H%M%S")
+import sys
 
 class InformacionPersonalSpider(scrapy.Spider):
     name = 'informacion_personal'
+    YYYYMMDD_HHMMSS = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-    def __init__(self):
+    def __init__(self, category=None, *args, **kwargs):
+        super(InformacionPersonalSpider, self).__init__(*args, **kwargs)
         self.in_path = './1_INPUT/'
         self.out_path = './2_OUTPUT/'
         self.personal_URL = 'http://www.transparencia.gob.pe/personal/pte_transparencia_personal_genera.aspx?ch_tipo_regimen=0&vc_dni_funcionario=&vc_nombre_funcionario=&ch_tipo_descarga=1&'
@@ -26,25 +27,22 @@ class InformacionPersonalSpider(scrapy.Spider):
         # Entidades filtradas
         self.entidades_df = entidades_df[~entidades_df[col].isin(entidades_filtrar_lst)]
 
-        # Periodos a consultar
-        periodos_filepath = self.in_path + 'periodos.txt'
-        cols = ['anho','mes']
-        types = {'anho': str, 'mes': str}
-        self.periodos_df = pd.read_csv(periodos_filepath, sep='\t', usecols=cols, dtype=types)
+        # Periodo a procesar
+        self.anho = self.codmes[:4]
+        self.mes = self.codmes[-2:]
 
     def start_requests(self):
-        for periodo_idx, periodo in self.periodos_df.iterrows():
-            for entidad_idx, entidad in self.entidades_df.iterrows():    
-                meta = {
-                    'tipo_poder_id': entidad['tipo_poder_id'],
-                    'tipo_poder_nombre': entidad['tipo_poder_nombre'],
-                    'categoria': entidad['categoria'],
-                    'entidad_id': entidad['entidad_id'],
-                    'entidad_nombre': entidad['entidad_nombre'],
-                    'cookiejar': periodo_idx + entidad_idx + 1
-                }
-                file_url = f"{self.personal_URL}id_entidad={entidad['entidad_id']}&in_anno_consulta={periodo['anho']}&ch_mes_consulta={periodo['mes']}"
-                yield scrapy.Request(url=file_url, meta=meta, callback=self.parse)
+        for entidad_idx, entidad in self.entidades_df.iterrows():    
+            meta = {
+                'tipo_poder_id': entidad['tipo_poder_id'],
+                'tipo_poder_nombre': entidad['tipo_poder_nombre'],
+                'categoria': entidad['categoria'],
+                'entidad_id': entidad['entidad_id'],
+                'entidad_nombre': entidad['entidad_nombre'],
+                'cookiejar': entidad_idx + 1
+            }
+            file_url = f"{self.personal_URL}id_entidad={entidad['entidad_id']}&in_anno_consulta={self.anho}&ch_mes_consulta={self.mes}"
+            yield scrapy.Request(url=file_url, meta=meta, callback=self.parse)
 
     def parse(self, response):
         if response.text != '' :
@@ -82,6 +80,6 @@ class InformacionPersonalSpider(scrapy.Spider):
             entidad['personas'] = personas
             yield(entidad)
         else:
-            entidades_filtrar_filepath = self.out_path + f'{YYYYMMDD_HHMMSS}_entidades_filtrar.txt'
+            entidades_filtrar_filepath = self.out_path + f'{self.anho}{self.mes}_informacion_personal_error_{YYYYMMDD_HHMMSS}.txt'
             with open(entidades_filtrar_filepath, 'a') as file:
                 file.write(f"{response.meta.get('entidad_id')}\n")
