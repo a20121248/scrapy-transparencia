@@ -1,18 +1,17 @@
 from transparencia_v2.items import EntidadItem
 import scrapy
 
-
 class EntidadesSpider(scrapy.Spider):
     name = 'entidades'
 
     def __init__(self):
-        self.initURL = 'https://www.transparencia.gob.pe'
+        self.init_URL = 'https://www.transparencia.gob.pe'
 
     def start_requests(self):
         meta = {
             'cookiejar': 1
         }
-        yield scrapy.Request(url=self.initURL, meta=meta)
+        yield scrapy.Request(url=self.init_URL, meta=meta)
 
     def parse(self, response):
         tipos = response.selector.xpath("//p[contains(@class, 'list-link')]/a")
@@ -33,7 +32,7 @@ class EntidadesSpider(scrapy.Spider):
         for bloque in bloques:
             entidades = bloque.xpath("./div[2]/ul/li/a")
             for entidad in entidades:
-                item=EntidadItem()
+                item = EntidadItem()
                 item['tipo_poder_id'] = response.meta.get('tipo_poder_id')
                 item['tipo_poder_nombre'] = response.meta.get('tipo_poder_nombre')
                 item['categoria'] = bloque.xpath("./div[1]/h4/text()").extract_first().replace('\n','').strip()

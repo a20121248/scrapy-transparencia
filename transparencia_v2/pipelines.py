@@ -1,5 +1,5 @@
 import pandas as pd
-from transparencia_v2.items import EntidadItem, InformacionPersonaItem
+from transparencia_v2.items import EntidadItem, InformacionEntidadItem
 from datetime import datetime
 
 YYYYMMDD_HHMMSS = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -14,30 +14,38 @@ class csvWriterPipeline(object):
     def __init__(self) -> None:
         self.items_written_infogeneral = 0
         self.data_encontrada_infogeneral = []
-        self.ctd_save_infogeneral = 1000
-        self.prename_infogeneral = f'{self.out_path}{YYYYMMDD_HHMMSS}_entidades'
+        self.ctd_save_infogeneral = 2
+        self.prename_infogeneral = ''
+        self.columnsPrincipal = ''
         pass
 
     def process_item(self, item, spider):
-        if isinstance(item, EntidadItem) or isinstance(item, InformacionPersonaItem):
-            if spider.name == 'entidades':
-                self.columnsPrincipal = ['tipo_poder_id','tipo_poder_nombre','categoria','entidad_id','entidad_nombre']
-            else:
-                self.columnsPrincipal = ['tipo_poder_id','tipo_poder_nombre','categoria','entidad_id','entidad_nombre']
+        if isinstance(item, InformacionEntidadItem):
+            self.prename_infogeneral = f'{self.out_path}{YYYYMMDD_HHMMSS}_informacion_personal.txt'
+            self.columnsPrincipal = ['tipo_poder_id','tipo_poder_nombre','categoria','entidad_id','entidad_nombre','pk_id_personal','vc_personal_ruc_entidad','in_personal_anno','in_personal_mes','vc_personal_regimen_laboral','vc_personal_paterno','vc_personal_materno','vc_personal_nombres','vc_personal_cargo','vc_personal_dependencia','mo_personal_remuneraciones','mo_personal_honorarios','mo_personal_incentivo','mo_personal_gratificacion','mo_personal_otros_beneficios','mo_personal_total','vc_personal_observaciones','fec_reg']
+            self.data_encontrada_infogeneral = pd.json_normalize(dict(item), ['personas'])
             self.items_written_infogeneral += 1
-            self.data_encontrada_infogeneral.append(item)
             if self.items_written_infogeneral % self.ctd_save_infogeneral == 0 :
-                self.data_encontrada_infogeneral = self.guarda_data(self.data_encontrada_infogeneral, self.items_written_infogeneral, self.prename_infogeneral)        
+                self.data_encontrada_infogeneral = self.guarda_data(self.data_encontrada_infogeneral, self.items_written_infogeneral, self.prename_infogeneral)
             return item
+
+    def guarda_data(self, df_gral, ctd_items=0, prename=''):
+        df_gral.to_csv(self.prename_infogeneral, sep='\t',header=ctd_items<=self.ctd_save_infogeneral,index=False, encoding="utf-8", columns=self.columnsPrincipal, mode='a')
+        return None
+
+    def __del__(self):
+        self.guarda_data(self.data_encontrada_infogeneral, self.items_written_infogeneral, self.prename_infogeneral)
+        print(25*'=','THE END',25*'=')
     
+    """
     def guarda_data(self, lista_datos, ctd_items=0, prename=''):
         df_gral = pd.DataFrame(lista_datos, columns=self.columnsPrincipal)
-        fname_gral = prename + '.txt'
         print('ctd_items=',ctd_items)
         print('ctd_save_infogeneral=',self.ctd_save_infogeneral)
-        df_gral.to_csv(fname_gral, sep='\t',header=ctd_items<=self.ctd_save_infogeneral,index=False, encoding="utf-8",mode='a')
+        df_gral.to_csv(self.prename_infogeneral, sep='\t',header=ctd_items<=self.ctd_save_infogeneral,index=False, encoding="utf-8",mode='a')
         return []
 
     def __del__(self):
         self.guarda_data(self.data_encontrada_infogeneral, self.items_written_infogeneral, self.prename_infogeneral)
         print(25*'=','THE END',25*'=')
+    """

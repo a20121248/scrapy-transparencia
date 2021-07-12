@@ -1,10 +1,4 @@
-# Define here the models for your scraped items
-#
-# See documentation in:
-# https://docs.scrapy.org/en/latest/topics/items.html
-
 import scrapy
-
 
 class EntidadItem(scrapy.Item):
     tipo_poder_id = scrapy.Field()
@@ -14,7 +8,32 @@ class EntidadItem(scrapy.Item):
     entidad_nombre = scrapy.Field()
     pass
 
-class InformacionPersonaItem(scrapy.Item):
-    # define the fields for your item here like:
-    # name = scrapy.Field()
+class InformacionEntidadItem(scrapy.Item):
+    tipo_poder_id = scrapy.Field()
+    tipo_poder_nombre = scrapy.Field()
+    categoria = scrapy.Field()
+    entidad_id = scrapy.Field()
+    entidad_nombre = scrapy.Field()
+    personas = scrapy.Field()
+    pass
+
+class PersonaItem(scrapy.Item):
+    pk_id_personal = scrapy.Field()
+    vc_personal_ruc_entidad = scrapy.Field()
+    in_personal_anno = scrapy.Field()
+    in_personal_mes = scrapy.Field()
+    vc_personal_regimen_laboral = scrapy.Field()
+    vc_personal_paterno = scrapy.Field()
+    vc_personal_materno = scrapy.Field()
+    vc_personal_nombres = scrapy.Field()
+    vc_personal_cargo = scrapy.Field()
+    vc_personal_dependencia = scrapy.Field()
+    mo_personal_remuneraciones = scrapy.Field()
+    mo_personal_honorarios = scrapy.Field()
+    mo_personal_incentivo = scrapy.Field()
+    mo_personal_gratificacion = scrapy.Field()
+    mo_personal_otros_beneficios = scrapy.Field()
+    mo_personal_total = scrapy.Field()
+    vc_personal_observaciones = scrapy.Field()
+    fec_reg = scrapy.Field()
     pass
