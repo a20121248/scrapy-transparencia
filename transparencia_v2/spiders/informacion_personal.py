@@ -2,13 +2,12 @@ import scrapy
 import pandas as pd
 from transparencia_v2.items import InformacionEntidadItem, PersonaItem
 from datetime import datetime
-import sys
 
 class InformacionPersonalSpider(scrapy.Spider):
     name = 'informacion_personal'
     YYYYMMDD_HHMMSS = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-    def __init__(self, category=None, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super(InformacionPersonalSpider, self).__init__(*args, **kwargs)
         self.in_path = './1_INPUT/'
         self.out_path = './2_OUTPUT/'
@@ -31,6 +30,10 @@ class InformacionPersonalSpider(scrapy.Spider):
         self.anho = self.codmes[:4]
         self.mes = self.codmes[-2:]
 
+        self.filepath_log = self.out_path + f'{self.anho}{self.mes}_informacion_personal_items_{self.YYYYMMDD_HHMMSS}.txt'
+        with open(self.filepath_log, 'w') as file:
+            file.write('tipo_poder_id\ttipo_poder_nombre\tcategoria\tentidad_id\tentidad_nombre\tpersonal_url\testado\n')
+
     def start_requests(self):
         for entidad_idx, entidad in self.entidades_df.iterrows():    
             meta = {
@@ -45,6 +48,13 @@ class InformacionPersonalSpider(scrapy.Spider):
             yield scrapy.Request(url=file_url, meta=meta, callback=self.parse)
 
     def parse(self, response):
+        tipo_poder_id = response.meta.get('tipo_poder_id')
+        tipo_poder_nombre = response.meta.get('tipo_poder_nombre')
+        categoria = response.meta.get('categoria')
+        entidad_id = response.meta.get('entidad_id')
+        entidad_nombre = response.meta.get('entidad_nombre')
+        url = response.request.url
+        line = f'{tipo_poder_id}\t{tipo_poder_nombre}\t{categoria}\t{entidad_id}\t{entidad_nombre}\t{url}\t'
         if response.text != '' :
             rows = response.selector.xpath("//tr")[1:]
             personas = []
@@ -56,35 +66,33 @@ class InformacionPersonalSpider(scrapy.Spider):
                 persona['in_personal_anno'] = columns[2].replace('\n','').strip()
                 persona['in_personal_mes'] = columns[3].replace('\n','').strip()
                 persona['vc_personal_regimen_laboral'] = columns[4].replace('\n','').strip()
-                persona['vc_personal_paterno'] = columns[5].replace('\n','').replace('Ð','Ñ').replace('¥','Ñ').replace('+','E').replace(',','').replace('É','E').replace('Á','A').replace('Í','I').replace('Ó','O').replace('Ú','U').strip()
-                persona['vc_personal_materno'] = columns[6].replace('\n','').replace('Ð','Ñ').replace('¥','Ñ').replace('+','E').replace(',','').replace('É','E').replace('Á','A').replace('Í','I').replace('Ó','O').replace('Ú','U').strip()
-                persona['vc_personal_nombres'] = columns[7].replace('\n','').replace('Ð','Ñ').replace('¥','Ñ').replace('+','E').replace(',','').replace('É','E').replace('Á','A').replace('Í','I').replace('Ó','O').replace('Ú','U').strip()
-                persona['vc_personal_cargo'] = columns[8].replace('\n','').strip()
-                persona['vc_personal_dependencia'] = columns[9].replace('\n','').strip()
+                persona['vc_personal_paterno'] = columns[5].replace('\n','').replace('\r',' ').replace('\t',' ').replace('Ð','Ñ').replace('¥','Ñ').replace('+','E').replace(',','').replace('É','E').replace('Á','A').replace('Í','I').replace('Ó','O').replace('Ú','U').strip()
+                persona['vc_personal_materno'] = columns[6].replace('\n','').replace('\r',' ').replace('\t',' ').replace('Ð','Ñ').replace('¥','Ñ').replace('+','E').replace(',','').replace('É','E').replace('Á','A').replace('Í','I').replace('Ó','O').replace('Ú','U').strip()
+                persona['vc_personal_nombres'] = columns[7].replace('\n','').replace('\r',' ').replace('\t',' ').replace('Ð','Ñ').replace('¥','Ñ').replace('+','E').replace(',','').replace('É','E').replace('Á','A').replace('Í','I').replace('Ó','O').replace('Ú','U').strip()
+                persona['vc_personal_cargo'] = columns[8].replace('\n','').replace('\r',' ').replace('\t',' ').replace('\r',' ').replace('\t',' ').strip()
+                persona['vc_personal_dependencia'] = columns[9].replace('\n','').replace('\r',' ').replace('\t',' ').strip()
                 persona['mo_personal_remuneraciones'] = columns[10].replace('\n','').strip()
                 persona['mo_personal_honorarios'] = columns[11].replace('\n','').strip()
                 persona['mo_personal_incentivo'] = columns[12].replace('\n','').strip()
                 persona['mo_personal_gratificacion'] = columns[13].replace('\n','').strip()
                 persona['mo_personal_otros_beneficios'] = columns[14].replace('\n','').strip()
                 persona['mo_personal_total'] = columns[15].replace('\n','').strip()
-                persona['vc_personal_observaciones'] = columns[16].replace('\n','').strip()
+                persona['vc_personal_observaciones'] = columns[16].replace('\n','').replace('\r',' ').replace('\t',' ').strip()
                 persona['fec_reg'] = columns[17].replace('\n','').strip()
                 personas.append(dict(persona))
             
             entidad = InformacionEntidadItem()
-            entidad['tipo_poder_id'] = response.meta.get('tipo_poder_id')
-            entidad['tipo_poder_nombre'] = response.meta.get('tipo_poder_nombre')
-            entidad['categoria'] = response.meta.get('categoria')
-            entidad['entidad_id'] = response.meta.get('entidad_id')
-            entidad['entidad_nombre'] = response.meta.get('entidad_nombre')
+            entidad['tipo_poder_id'] = tipo_poder_id
+            entidad['tipo_poder_nombre'] = tipo_poder_nombre
+            entidad['categoria'] = categoria
+            entidad['entidad_id'] = entidad_id
+            entidad['entidad_nombre'] = entidad_nombre
             entidad['personas'] = personas
 
-            filepath = self.out_path + f'{self.anho}{self.mes}_informacion_personal_success_{self.YYYYMMDD_HHMMSS}.txt'
-            with open(filepath, 'a') as file:
-                file.write(f"{response.meta.get('entidad_id')}\n")
-            
+            line += 'SUCESS\n'
             yield(entidad)
         else:
-            filepath = self.out_path + f'{self.anho}{self.mes}_informacion_personal_error_{self.YYYYMMDD_HHMMSS}.txt'
-            with open(filepath, 'a') as file:
-                file.write(f"{response.meta.get('entidad_id')}\n")
+            line += 'ERROR\n'
+        
+        with open(self.filepath_log, 'a') as file:
+            file.write(line)
