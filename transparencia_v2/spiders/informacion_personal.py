@@ -35,7 +35,7 @@ class InformacionPersonalSpider(scrapy.Spider):
             file.write('tipo_poder_id\ttipo_poder_nombre\tcategoria\tentidad_id\tentidad_nombre\tpersonal_url\testado\n')
 
     def start_requests(self):
-        for entidad_idx, entidad in self.entidades_df.iterrows():    
+        for entidad_idx, entidad in self.entidades_df.iterrows():
             meta = {
                 'tipo_poder_id': entidad['tipo_poder_id'],
                 'tipo_poder_nombre': entidad['tipo_poder_nombre'],
